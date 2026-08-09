@@ -1,0 +1,52 @@
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y \
+        bash \
+        coreutils \
+        procps \
+        iproute2 \
+        iputils-ping \
+        net-tools \
+        dnsutils \
+        curl \
+        wget \
+        ca-certificates \
+        git \
+        openssh-client \
+        python3 \
+        python3-pip \
+        python3-venv \
+        build-essential \
+        jq \
+        file \
+        findutils \
+        grep \
+        sed \
+        gawk \
+        tree \
+        less \
+        vim-tiny \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN useradd \
+    --create-home \
+    --shell /bin/bash \
+    --uid 10001 \
+    agent
+
+RUN mkdir -p /workspace /tmp/agent-tmp /opt/tests && \
+    chown -R agent:agent /workspace /tmp/agent-tmp /opt/tests
+
+COPY --chown=agent:agent tests/ /opt/tests/
+
+ENV HOME=/home/agent
+ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+WORKDIR /workspace
+
+USER agent
+
+CMD ["/bin/bash"]
