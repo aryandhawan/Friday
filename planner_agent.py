@@ -1,5 +1,6 @@
 from typing import List
-
+import re
+import json
 from agents import Agent, Runner, set_tracing_disabled, trace, function_tool, OpenAIChatCompletionsModel, output_guardrail, GuardrailFunctionOutput
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
@@ -102,29 +103,22 @@ planning_agent=Agent(
     model=groq_model,
 )
 
-extraction_agent=Agent(
-    name="File Extractor",
-    instructions="Extract the list of files and their domains from the Planner's output. Return the files found in the document.",
-    model=groq_model,
-    output_type=FileListOutput
-)
+def extract_file_list(markdown_text: str) -> list[PlannedFile]:
+    # Grab the trailing JSON array the planner already emits per its instructions
+    match = re.search(r"\[\s*\{.*\}\s*\]", markdown_text, re.DOTALL)
+    if not match:
+        raise ValueError("Planner output did not contain a JSON file list")
 
-def extract_file_list(markdown_text: str, max_retries: int = 2) -> list[PlannedFile]:
-    last_error = None
-    for attempt in range(max_retries + 1):
-        try:
-            result = Runner.run_sync(extraction_agent, markdown_text)
-            return result.final_output
-        except Exception as e:
-            last_error = e
-            if "json_validate_failed" in str(e) or "tool_use_failed" in str(e):
-                print(f"[extraction] JSON validation failed, retrying ({attempt + 1}/{max_retries})...")
-                continue
-            raise
-    raise last_error
+    raw = match.group(0)
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Planner emitted malformed JSON: {e}\nRaw: {raw}") from e
+
+    return [PlannedFile(**item) for item in data]
 
 markdown_result = Runner.run_sync(planning_agent, "I want to make a ML classifier web app for loan acceptance prediction. It should have a web interface for users to input their data, and it should use a machine learning model to predict whether the loan will be accepted or not. The app should also provide some visualizations of the data and the model's performance.")
-file_list_result = extract_file_list(markdown_result.final_output)
+
 
 print("Planner Output:\n", markdown_result.final_output)
-print("\nExtracted File List:\n", file_list_result)
+print("\nExtracted File List:\n", extract_file_list(markdown_result.final_output))
