@@ -117,8 +117,8 @@ def extract_file_list(markdown_text: str) -> list[PlannedFile]:
 
     return [PlannedFile(**item) for item in data]
 
-markdown_result = Runner.run_sync(planning_agent, "I want to make a ML classifier web app for loan acceptance prediction. It should have a web interface for users to input their data, and it should use a machine learning model to predict whether the loan will be accepted or not. The app should also provide some visualizations of the data and the model's performance.")
-
-
-print("Planner Output:\n", markdown_result.final_output)
-print("\nExtracted File List:\n", extract_file_list(markdown_result.final_output))
+if __name__ == "__main__":
+    markdown_result = Runner.run_sync(planning_agent, "I want to make a ML classifier web app for loan acceptance prediction...")
+    print("-"*40)
+    file_list_result = extract_file_list(markdown_result.final_output)
+    print(file_list_result)
