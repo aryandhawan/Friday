@@ -5,8 +5,10 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 from openai import AsyncOpenAI
 import os
+
 load_dotenv()  
 
+set_tracing_disabled(disabled=True)
 class PlannedFile(BaseModel):
     filename: str
     domain: str
