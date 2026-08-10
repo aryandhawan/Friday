@@ -6,7 +6,8 @@ from pathlib import Path
 import asyncio
 import sandbox
 from agents import SQLiteSession
-from openai import APIError
+from openai import APIError,RateLimitError
+import time 
 # --- Holds a finished file, not an LLM output_type ---
 class GeneratedFile(BaseModel):
     filename: str
@@ -76,6 +77,8 @@ BASE_DIR = Path(__file__).resolve().parent
 
 @function_tool
 def write_file(filename: str, code: str) -> str:
+    """Writes code to a file inside the sandbox. BOTH filename and code are required —
+    filename is the exact file path (e.g. 'train.py'), code is the complete file contents."""
     path = BASE_DIR / filename
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(code, encoding="utf-8")
@@ -128,7 +131,15 @@ async def build_project(coordinator: Agent, plan_input: str, max_retries: int = 
     for attempt in range(1, max_retries + 1):
         try:
             print(f"[run] starting agent run (attempt {attempt}/{max_retries})")
-            stream = Runner.run_streamed(coordinator, plan_input,max_turns=30,session=session)
+            # session already holds every tool call/output from prior attempts, so on
+            # retry we nudge it to continue rather than re-sending the full plan, which
+            # would otherwise look like a brand-new request and risk redoing finished files.
+            current_input = plan_input if attempt == 1 else (
+                "Continue exactly where you left off. Do not regenerate or rewrite any "
+                "file you already wrote successfully in this session — check what's been "
+                "written so far and pick up with the next unfinished step."
+            )
+            stream = Runner.run_streamed(coordinator, current_input, max_turns=30, session=session)
             async for event in stream.stream_events():
                 if not isinstance(event, RunItemStreamEvent):
                     continue
@@ -141,9 +152,15 @@ async def build_project(coordinator: Agent, plan_input: str, max_retries: int = 
                 elif isinstance(item, ToolCallOutputItem):
                     print(f"--- tool output ---\n{item.output}")
             return stream
+        except RateLimitError as e:
+            last_error = e
+            wait_time = 25
+            print(f"[retry] Rate limit hit, waiting {wait_time}s before retrying...")
+            time.sleep(wait_time)
+            continue
         except APIError as e:
             message = str(e)
-            if "tool_use_failed" not in message and "Failed to parse tool call arguments" not in message:
+            if "tool_use_failed" not in message and "Failed to parse tool call arguments" not in message and "did not match schema" not in message:
                 raise
             last_error = e
             print(f"[retry] tool call parsing failed on attempt {attempt}/{max_retries}, retrying...")

@@ -21,16 +21,16 @@ groq_api_key = os.getenv("GROQ_API_KEY")
 
 set_tracing_disabled(disabled=True)
 
-groq_url="https://api.groq.com/openai/v1"
+google_url="https://generativelanguage.googleapis.com/v1beta/openai/"
 
-groq_client=AsyncOpenAI(
-    base_url=groq_url,
+google_client=AsyncOpenAI(
+    base_url=google_url,
     api_key=groq_api_key,
     )
 
 groq_model = OpenAIChatCompletionsModel(
-    model="openai/gpt-oss-120b", 
-    openai_client=groq_client
+    model="gemini-2.0-flash", 
+    openai_client=google_client
 )
 
 class FileListOutput(BaseModel):
