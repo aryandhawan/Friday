@@ -40,10 +40,11 @@ RUN useradd \
 RUN mkdir -p /workspace /tmp/agent-tmp /opt/tests && \
     chown -R agent:agent /workspace /tmp/agent-tmp /opt/tests
 
-COPY --chown=agent:agent tests/ /opt/tests/
+RUN python3 -m venv /opt/venv --system-site-packages && \
+    chown -R agent:agent /opt/venv
 
 ENV HOME=/home/agent
-ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ENV PATH=/opt/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 WORKDIR /workspace
 
