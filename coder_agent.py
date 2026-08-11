@@ -90,7 +90,12 @@ def run_in_sandbox(command: str) -> str:
     """Runs a shell command inside the Docker sandbox (built from ./dockerfile) and
     returns its exit code and combined output. The project directory is mounted at
     /workspace inside the sandbox, so any files already written are visible there."""
-    return sandbox.run(command)
+    try:
+        return sandbox.run(command)
+    except Exception as e:
+        # Never let a sandbox/Docker problem kill the whole run — surface it as
+        # tool output so the coordinator can report it and still finish cleanly.
+        return f"[sandbox unavailable] {e}"
 
 
 sandbox_agent = Agent(
