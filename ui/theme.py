@@ -17,16 +17,16 @@ BG_PANEL = "#071A2A"
 BG_PANEL_RAISED = "#0A263A"
 
 # -- Accents --------------------------------------------------------------
-ACCENT_PRIMARY = "#00A8FF"
-ACCENT_BRIGHT = "#00C8FF"
-ACCENT_DEEP = "#008CFF"
-ACCENT_SECONDARY = "#0066A8"
+ACCENT_PRIMARY = "#A200FF"
+ACCENT_BRIGHT = "#6F00FF"
+ACCENT_DEEP = "#5E00DA"
+ACCENT_SECONDARY = "#6E00EC"
 
 # -- Text -------------------------------------------------------------------
 TEXT_BRIGHT = "#D7F3FF"
-TEXT_MID = "#8FCBE8"
-TEXT_DIM = "#5FA8C7"
-TEXT_MUTED = "#47788F"
+TEXT_MID = "#D88FE8"
+TEXT_DIM = "#965FC7"
+TEXT_MUTED = "#714295"
 
 # The one deliberate non-blue-ramp accent, used solely for the literal
 # text of user-submitted console lines so it's instantly scannable.
